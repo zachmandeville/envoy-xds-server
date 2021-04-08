@@ -54,36 +54,36 @@ func main() {
 
 	// Create a cache
 	cache := cache.NewSnapshotCache(false, cache.IDHash{}, l)
-
+	
 	// Create a processor
 	proc := processor.NewProcessor(
-		cache, nodeID, log.WithField("context", "processor"))
-
+	    cache, nodeID, log.WithField("context", "processor"))
+	
 	// Create initial snapshot from file
 	proc.ProcessFile(watcher.NotifyMessage{
-		Operation: watcher.Create,
-		FilePath:  watchDirectoryFileName,
+	    Operation: watcher.Create,
+	    FilePath:  watchDirectoryFileName,
 	})
-
+	
 	// Notify channel for file system events
 	notifyCh := make(chan watcher.NotifyMessage)
-
+	
 	go func() {
-		// Watch for file changes
-		watcher.Watch(watchDirectoryFileName, notifyCh)
+	    // Watch for file changes
+	    watcher.Watch(watchDirectoryFileName, notifyCh)
 	}()
-
+	
 	go func() {
-		// Run the xDS server
-		ctx := context.Background()
-		srv := serverv3.NewServer(ctx, cache, nil)
-		server.RunServer(ctx, srv, port)
+	    // Run the xDS server
+	    ctx := context.Background()
+	    srv := serverv3.NewServer(ctx, cache, nil)
+	    server.RunServer(ctx, srv, port)
 	}()
-
+	
 	for {
-		select {
-		case msg := <-notifyCh:
-			proc.ProcessFile(msg)
-		}
+	    select {
+	    case msg := <-notifyCh:
+	        proc.ProcessFile(msg)
+	    }
 	}
 }
