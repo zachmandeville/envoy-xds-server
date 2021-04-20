@@ -1,0 +1,60 @@
+#+TITLE: TODO
+
+* BRING IT UP!
+
+#+BEGIN_SRC bash :result silent
+for PORT in 910{0..4}; do
+    kubectl run "echo$PORT" --port 8080 -l envoy-test=yes,envoy-test-port=$PORT --image=stevesloka/echo-server -- echo-server --echotext=ENVOY_AWAY!!!
+    kubectl expose pod "echo$PORT" --port "$PORT" --target-port=8080 -l envoy-test=yes,envoy-test-port=$PORT
+done
+#+END_SRC
+
+#+BEGIN_SRC bash :result silent
+kubectl delete svc,pod -l envoy-test=yes
+#+END_SRC
+
+
+* 120421
+** TODO understand where the caching is coming from
+We are working on an implementation of the go control plane. IT has these parts:
++ envoy
+  - bootstap yaml
+  - ads-bootstrap yaml
+  - ~/envoy-config.yaml
++ xds-server
+  + config.yaml
++ Echo Server in cluster
++ Kubernetes cluster
+*** Questions
+**** What it look like when we curl our cluster ip's directly?
+#+BEGIN_SRC bash
+PORT=9100
+curl http://$(kubectl get svc echo$PORT -o=jsonpath='{.spec.clusterIP}'):$PORT
+#+END_SRC
+
+#+RESULTS:
+#+begin_src bash
+ECHO Request Server:
+--------------------
+App:
+    Sample-Endpoint!
+Host:
+    echo9100
+Request:
+    http://10.100.131.55:9100/
+Headers:
+    map[Accept:[*/*] User-Agent:[curl/7.68.0]]
+#+end_src
+
+The issue was that when the Pods and Services were brought up, each service pointed back to all of the same Pods instead of just one.
+
+**** What is the echo server intended to be doing?
+
+Taking the OS's hostname and whatever you set to be the echotext to be the Host and App fields, respectively.
+
+**** How are changes being communicated from xds-server to envoy?
+
+
+** TODO LOGICAL_DNS instead of STATIC (IPs)
+** TODO 302 redirect with Envoy
+*** Source IP address
